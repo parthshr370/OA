@@ -46,8 +46,8 @@ def parse_args():
     parser.add_argument("--evaluate", action="store_true", help="Evaluate a candidate's responses")
     parser.add_argument("--assessment-id", type=str, help="Assessment ID to evaluate")
     parser.add_argument("--responses", type=str, help="Path to candidate responses JSON file")
-    parser.add_argument("--configure", action="store_true", help="Configure the pipeline with OpenRouter keys")
     return parser.parse_args()
+
 
 def initialize_services():
     """Initialize all services."""
@@ -296,11 +296,6 @@ def main():
     """Main entry point for the OA Generation Agent Pipeline."""
     args = parse_args()
     
-    # Configure the pipeline if requested
-    if args.configure:
-        configure_pipeline()
-        return
-    
     # Create sample data if requested
     if args.create_sample:
         create_sample_data(SAMPLE_DIR)
@@ -315,8 +310,15 @@ def main():
     test_non_reasoning = services["non_reasoning_llm"].generate_text("Hello, I'm testing the non-reasoning LLM configuration.")
     
     logger.info("LLM test results:")
-    logger.info(f"Reasoning LLM: {test_reasoning[:100]}...")
-    logger.info(f"Non-reasoning LLM: {test_non_reasoning[:100]}...")
+    if test_reasoning is not None:
+        logger.info(f"Reasoning LLM: {test_reasoning[:100]}...")
+    else:
+        logger.info("Reasoning LLM: No response received (API call may have failed)")
+
+    if test_non_reasoning is not None:
+        logger.info(f"Non-reasoning LLM: {test_non_reasoning[:100]}...")
+    else:
+        logger.info("Non-reasoning LLM: No response received (API call may have failed)")
     
     # Evaluate an assessment if requested
     if args.evaluate:
@@ -336,7 +338,7 @@ def main():
             print(f"Feedback: {evaluation.feedback}")
             print("\nQuestion Evaluations:")
             for qe in evaluation.question_evaluations:
-                print(f"Question ID: {qe.question_id}, Score: {qe.score}, Correctness: {qe.correctness}")
+                print(f"Question ID: {qe.question_id}, Score: {qe.score}, Correctness: {qe.correctness if hasattr(qe, 'correctness') else 'N/A'}")
                 print(f"Feedback: {qe.feedback}")
                 print()
         
@@ -357,7 +359,7 @@ def main():
             print(f"Number of Questions: {len(assessment.questions)}")
             print("\nQuestions:")
             for i, question in enumerate(assessment.questions, 1):
-                print(f"{i}. {question.question_text}")
+                print(f"{i}. {question.content}")  # Fixed: using content instead of question_text
                 print(f"   Type: {question.question_type}, Difficulty: {question.difficulty}")
                 print()
         

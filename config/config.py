@@ -42,25 +42,25 @@ LOG_LEVEL_MAP = {
 }
 LOGGING_LEVEL = LOG_LEVEL_MAP.get(LOG_LEVEL, logging.INFO)
 
-# OpenRouter models 
+# Replace the current LLM configuration code with this simpler version
+API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+REASONING_MODEL = os.environ.get("REASONING_MODEL", "openai/o3-mini")
 NON_REASONING_MODEL = os.environ.get("NON_REASONING_MODEL", "gemini-flash-2.0")
-REASONING_MODEL = os.environ.get("REASONING_MODEL", "openai/o3e-mini")
 
-# LLM Configuration
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openrouter")
+# Change this line in config/config.py
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "mock")  # Change to "mock" for testing
 
-# Default to reasoning configuration
+# And update these to match
 LLM_CONFIG = {
     "provider": LLM_PROVIDER,
-    "api_key": os.environ.get(f"{LLM_PROVIDER.upper()}_API_KEY", ""),
+    "api_key": os.environ.get("OPENROUTER_REASONING_API_KEY", ""),
     "model_name": REASONING_MODEL,
     "is_reasoning": True
 }
 
-# Non-reasoning LLM Configuration - for profile analysis and question generation
 NON_REASONING_LLM_CONFIG = {
     "provider": LLM_PROVIDER,
-    "api_key": os.environ.get(f"{LLM_PROVIDER.upper()}_API_KEY", ""),
+    "api_key": os.environ.get("OPENROUTER_NON_REASONING_API_KEY", ""),
     "model_name": NON_REASONING_MODEL,
     "is_reasoning": False
 }

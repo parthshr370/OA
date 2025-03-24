@@ -32,12 +32,24 @@ class LLMService:
         self.openrouter_reason_key = os.environ.get("OPENROUTER_REASONING_API_KEY", "")
         self.openrouter_nonreason_key = os.environ.get("OPENROUTER_NON_REASONING_API_KEY", "")
         
+        # Check for API keys and log status
+        if self.provider == "openrouter":
+            if self.is_reasoning and not self.openrouter_reason_key:
+                logger.warning("OpenRouter REASONING API key not found in environment variables")
+            elif not self.is_reasoning and not self.openrouter_nonreason_key:
+                logger.warning("OpenRouter NON-REASONING API key not found in environment variables")
+        
         # Check if LangChain is available
         if not LANGCHAIN_AVAILABLE and self.provider != "mock" and self.provider != "openrouter":
             logger.warning("LangChain not available. Using mock LLM.")
             self.provider = "mock"
         
         logger.info(f"Initialized LLM service with provider: {self.provider}, model: {self.model_name}")
+        
+        if self.provider == "openrouter":
+            api_key_type = "reasoning" if self.is_reasoning else "non-reasoning"
+            api_key_present = "YES" if (self.is_reasoning and self.openrouter_reason_key) or (not self.is_reasoning and self.openrouter_nonreason_key) else "NO"
+            logger.info(f"OpenRouter {api_key_type} API key present: {api_key_present}")
         
         # Initialize LLM based on provider
         self.llm = self._initialize_llm()
@@ -142,9 +154,10 @@ class LLMService:
         
         # Determine which API key to use based on reasoning flag
         api_key = self.openrouter_reason_key if self.is_reasoning else self.openrouter_nonreason_key
+        key_type = "reasoning" if self.is_reasoning else "non-reasoning"
         
         if not api_key:
-            logger.error("OpenRouter API key not provided")
+            logger.error(f"OpenRouter {key_type} API key not provided")
             return None
         
         # Prepare messages
@@ -177,10 +190,12 @@ class LLMService:
         
         try:
             # Make API request
+            logger.info(f"Sending request to OpenRouter API with {key_type} key")
             response = requests.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
-                data=json.dumps(data)
+                data=json.dumps(data),
+                timeout=30  # Add a timeout
             )
             
             # Parse response
